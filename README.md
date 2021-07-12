@@ -1,4 +1,4 @@
-# sst-documentation
+# SST Documentation
 Documentation for SST
 
 Contributions to this repository should be submitted as pull requests.
