@@ -18,7 +18,7 @@ must consider updates to each and every simulated component.  This
 often implies very large runtime overheads for even simplistic 
 simulation models.  In contrast, PDES models only update the portions 
 of the simulation model (or models) that register changes (events) 
-within the given simulated window of time. In this manner, A discrete 
+within the given simulated window of time. In this manner, a discrete 
 event simulation model assumes the system being simulated 
 only changes state at discrete points in simulated time. The 
 simulation model jumps from one state to another upon the 
