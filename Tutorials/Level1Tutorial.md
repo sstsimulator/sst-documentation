@@ -13,12 +13,12 @@
   To combat the ever-changing and multifaceted technologies of the HPC 
   community, an effort was made to create a unified tool box used to evaluate 
   these challenges. The Structural Simulation Toolkit (SST) an open, modular, 
-  parallel, multi-criteria, multi-scale simulation framework  was created to 
-  design and procure HPC systems. By providing a number of interfaces and 
-  utilizes for simulation models, SST, will demolish the need for simulations 
-  for individual system components. A now unified framework exists for parallel 
+  parallel, multi-scale simulation framework  was created to 
+  model High Performance Computing (HPC) systems. By providing a number of interfaces and 
+  utilities for simulation models, SST, will demolish the need for simulations 
+  for individual system components. SST is a framework that enables parallel 
   simulation of large machines at multiple levels. The SST has been used in 
-  variety of network, memory and applications.
+  variety of network designs, memory hierarchies, and applications.
 
 ## Components of SST: <a name="ComponentsOfSST"></a>
   To meet these requirements, the SST is comprised of a simple simulation core 
@@ -40,16 +40,13 @@
   links—with each link having a minimum latency. In addition, components can 
   load subcomponents and modules for even more functionality and customization. 
   To achieve better performance, the SST uses a conservative (i.e. 
-  no roll-back) distance-based optimization. At the start of the simulation, 
+  no roll-back) graph-based optimization approach that models simulation components 
+  as a graph. At the start of the simulation, 
   the system topology is represented by a graph with components as nodes and 
   connections between them as edges, with each edge labeled with the minimum 
-  latency between the connected components. The Zoltan library is then used to 
+  latency between the connected components. The SST partitioner is then used to 
   partition components across the MPI ranks with the goal of balancing the load 
-  and partitioning across the highest latency links. Tests indicate that the 
-  algorithm is scalable and shows less than 25% overhead at 128 ranks (11,904 
-  simulated components) compared to a single rank for detailed simulations. 
-
-![image](https://user-images.githubusercontent.com/74792926/121704586-e5454680-caa1-11eb-8c1f-b33daad81498.png)
+  and partitioning across the highest latency links. 
 
 ## Basic Installation <a name="BasicInstallation"></a>
 
@@ -122,7 +119,7 @@ $> ./configure --help
 
 Now that the SST-Core has been installed, we can build the SST-Elements package.  
 The SST-Elements package provides individual *components* that simulate specific 
-pieces of hardware.  The SST-Elements package provides a number of pathological 
+pieces of hardware.  The SST-Elements package provides a number of sample
 hardware elements such as memories, caches, processor cores and network interfaces.  
 It also provides a number of examples on how to construct larger simulations of 
 full systems.  The SST-Elements provides a number of components that are built 
@@ -216,6 +213,20 @@ as follows:
 $> sst --output-dot=foo.dot /path/to/simulation.py
 $> sst --run-mode=init --output-dot=foo.dot /path/to/simulation.dot
 $> dot -Tpdf foo.dot > foo.pdf
+```
+
+* _Configuring the DOT Verbostiy_: Similar to the previous example, SST also 
+provides a mechanism to control the level of detail included in the DOT graph 
+output.  Setting the `--dot-verbosity` option alonsgide the `--output-dot` option 
+will control this feature.  The verbosity option accepts an integer as an input.  
+For any values less than 10, SST will output only the component configuration graph.  
+For any values greater than or equal to 10, SST will also output the MPI rank 
+info with the associated components and links assigned to the appropriate MPI ranks.
+```
+$> sst --run-mode=init --output-dot=foo_small.dot --dot-verbosity=5 /path/to/simulation/py
+$> dot -Tpdf foo_small.dot > foo_small.pdf
+$> sst --run-mode=init --output-dot=foo_large.dot --dot-verbosity=10 /path/to/simulation/py
+$> dot -Tpdf foo_large.dot > foo_large.pdf
 ```
 
 * _Converting Between Simulation File Types_: One of the latest features 
