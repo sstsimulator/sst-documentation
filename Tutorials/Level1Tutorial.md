@@ -15,7 +15,7 @@
   these challenges. The Structural Simulation Toolkit (SST) an open, modular, 
   parallel, multi-scale simulation framework  was created to 
   model High Performance Computing (HPC) systems. By providing a number of interfaces and 
-  utilities for simulation models, SST, will demolish the need for simulations 
+  utilities for simulation models, SST, will eliminate the need for simulations 
   for individual system components. SST is a framework that enables parallel 
   simulation of large machines at multiple levels. The SST has been used in 
   variety of network designs, memory hierarchies, and applications.
