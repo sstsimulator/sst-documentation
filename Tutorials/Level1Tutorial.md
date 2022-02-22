@@ -218,10 +218,12 @@ $> dot -Tpdf foo.dot > foo.pdf
 * _Configuring the DOT Verbostiy_: Similar to the previous example, SST also 
 provides a mechanism to control the level of detail included in the DOT graph 
 output.  Setting the `--dot-verbosity` option alonsgide the `--output-dot` option 
-will control this feature.  The verbosity option accepts an integer as an input.  
-For any values less than 10, SST will output only the component configuration graph.  
-For any values greater than or equal to 10, SST will also output the MPI rank 
-info with the associated components and links assigned to the appropriate MPI ranks.
+will control this feature.  The verbosity option accepts an integer as an input. The 
+default level (0-1) only displays the component names and draws links between 
+components.  Setting the level to (2-3) will also display the component type.  Setting 
+the level to (4-5) will also display the component ports.  Levels (8-9) 
+will display the link name and latency.  Finally, any level greater than or 
+equal to 10 will display the MPI rank information for the partitioned graph.
 ```
 $> sst --run-mode=init --output-dot=foo_small.dot --dot-verbosity=5 /path/to/simulation/py
 $> dot -Tpdf foo_small.dot > foo_small.pdf
