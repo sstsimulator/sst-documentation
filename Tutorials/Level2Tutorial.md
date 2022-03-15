@@ -12,9 +12,9 @@
 ### Introduction and Environment
 
 One of the key features of SST is the ability to execute parallel 
-simulations that utilize the MPI (Message Passing Interface) to span 
+simulations that utilize the MPI (Message Passing Interface) and/or C++ threads to span 
 multiple cores and/or multiple nodes in a cluster.  The SST Core interfaces 
-are natively built to utilize MPI in order to perform communication between 
+are natively built to utilize MPI/threads in order to perform communication between 
 individual components across multiple MPI "ranks."  This enables users to 
 build and execute large scale simulations without fear of exhausting a single 
 system's resources.  When a user requests a parallel simulation (using MPI 
@@ -22,8 +22,7 @@ or threading), the SST Core infrastructure will automatically partition the
 requested components and subcomponents across the target number of parallel 
 units.  This partitioning considers the requested simulation components, the 
 connectivity of the components and the latency of the links between components 
-in order to co-locate components and subcomponents that are expected to frequently 
-exchange events.
+in order to minimize synchronization overhead.
 
 The MPI parallelism present in SST can only be utilized if the SST Core 
 infrastructure was built with MPI enabled.  Generally speaking, this is enabled 
@@ -185,16 +184,16 @@ to using Python as the basis for the simulation input is that users may utilize
 all the standard Python loop constructs, flow control and function interfaces. The 
 standard Python syntax combined with the SST Python classes enable powerful 
 features for creating simulations.  The remainder of this section provides an overview 
-into a number of advanced Python features as well as the SST Python interfaces.  THis 
+into a number of advanced Python features as well as the SST Python interfaces.  This 
 section assumes that the user has basic knowledge of Python syntax and data 
 structures.
 
 ### Program Options
 
-The SST Python interfaces provide users the ability to to retrieve and set global 
+The SST Python interfaces provide users the ability to retrieve and set global 
 program options.  These options allow users to control global options that 
 are analogous to those passed on the command line.  This is often useful when 
-buidling large, complex simulations that need to be utilized across multiple users 
+building large, complex simulations that need to be utilized across multiple users 
 and systems while maintaining the same runtime environment.  It also reduces the 
 overhead to maintain complex shell scripts and command line options.
 
@@ -218,7 +217,8 @@ if Opts["verbose"] == 1 :
 
 Similarly, we can enable certain global program options using the 
 `sst.setProgramOption` interface.  This interface accepts both single name:value 
-pairs as well as full dictionaries of name:value pairs.  In this example, 
+pairs.  Additionally, the `sst.setProgramOptions` accepts a dictionary of 
+name:value pairs.  In this example, 
 if the verbose flag is set from the command line, we also ask SST to output 
 the simulation configuration to a file.  This will ask the SST Core to output the 
 simulation graph, as it interpreted the configuration, back to the file `config.py`.
@@ -293,18 +293,18 @@ Building CPU Component 9
 ### Building Complex Simulations
 
 Now that we have the ability to query the environment, set 
-program set and retrieve command line arguments via the SST Python 
+program options and retrieve command line arguments via the SST Python 
 environment, we can start building more complex simulation scripts 
 using all of the aforementioned features coupled to the SST Python 
 function interfaces.
 
 Before we begin our next example, we need to 
-introduct several new SST Python functions, `pushNamePrefix` and 
+introduce several new SST Python functions, `pushNamePrefix` and 
 `popNamePrefix`.  As mentioned in the Level 1 tutorial material, 
 each component must retain a unique name internal to SST.  This ensures 
 that subcomponents and links are attached to the correct components in the 
 prescribed manner.  When constructing simulation scripts that utilize 
-a large number of similar components, its often difficult to manually 
+a large number of similar components, it's often difficult to manually 
 create and track the unique names when creating components, links and 
 subcomponents.  the `pushNamePrefix` function accepts a string argument.  
 This string is inserted as a prefix string to any subsequently created 
@@ -323,7 +323,7 @@ script within SST.
 
 For our example, we will create a variable number of 
 `coreTestElement.coreTestClockerComponent` components and execute 
-each one at 1Mhz.  We seek to create a script that queries the local 
+each one at 1MHz.  We seek to create a script that queries the local 
 SST program options environment and constructs a variable number of 
 clock domains based upon the user's input.  For this, we will utilize 
 the SST `--model-options` command line structure to handle a command 
@@ -432,7 +432,7 @@ we see the following.  Further, if we enable verbosity, we also
 find that SST echoes a valid Python script back out to config.py
 
 ```
-$> sst -v --model-options="--clocks 2" test2.py
+$> sst -v --output-config=config.py --model-options="--clocks 2" sim.py
 SSTPythonModel: Creating config graph for SST using Python model...
 {'debug-file': '/dev/null', 'stop-at': '0 ns', 'heartbeat-period': 'N', 'timebase': '1 ps', 'partitioner': 'sst.linear', 'verbose': 1, 'output-partition': '', 'output-config': 'config.py', 'output-dot': '', 'numRanks': 1, 'numThreads': 1, 'run-mode': 'both'}
 Created clock component 0: DOMAIN0.clocker
@@ -565,7 +565,8 @@ sst.setStatisticOutput("sst.statOutputConsole")
 The following section projects an outline of the available SST Python 
 function interfaces.  We have utilized many of the interfaces throughout the 
 Level 1 and Level 2 tutorials.  Please refer back to the various samples 
-for examples on utilizing the interfaces.
+for examples on utilizing the interfaces.  These classes and examples are 
+accurate as of SST 11.1.
 
 #### Component/Subcomponent Class
 
@@ -1026,7 +1027,14 @@ graph into `N` files for `N` ranks of a simulation whereby each `N-th` rank
 independently loads only its portion of the simulation graph.  SST will handle 
 the hard portion of wiring up the graph across MPI ranks.  However, the input 
 files for each rank *must* contain the same `program_options`.  In this manner, 
-each rank is configured to operate under the same global options.
+each rank is configured to operate under the same global options.  The input 
+files must also be completely manually partitioned as the normal partitioning 
+stage will be skipped.  Any “extra” components (i.e. those assigned to a 
+partition not on the current rank) in the files will be ignored, other than 
+“ghost” components, which are components which have a link that is connected on 
+one side to a component in the current rank.  Note that this functionality 
+works for both python and JSON inputs, but the text below will refer only to 
+JSON files.  The same information can be extended to python inputs.
 
 Executing SST with the parallel graph loader requires that the user create 
 a single input file for each rank of the parallel simulation.  As a result, 
@@ -1042,13 +1050,13 @@ FILE{n-1}.json
 
 When executing using the parallel graph loader, we need additional options 
 and file prefixes on the command line.  First, we must specify the 
-`--parallel-output` option in order to trigger the SST core to load 
+`--parallel-load` option in order to trigger the SST core to load 
 the per-rank simulation files.  Next, we must specify the base file 
 prefix as the input to the simulation.  Using our example above (`FILE0.json`) 
 would be specified as `FILE.json`.  An example of doing so resembles the following:
 
 ```
-$> mpirun --hostfile output.txt -n2 sst --parallel-output=1 FILE.json
+$> mpirun --hostfile output.txt -n2 sst --parallel-load=1 FILE.json
 ```
 
 In addition to the aforementioned parallel graph loading, the latest development 
@@ -1074,8 +1082,5 @@ standard SST tests.
 | Merlin 256 Node FatTree | 4 | [Rank0](samples/parallel/fattree_256_test_parallel0.json) [Rank1](samples/parallel/fattree_256_test_parallel1.json) [Rank2](samples/parallel/fattree_256_test_parallel2.json) [Rank3](samples/parallel/fattree_256_test_parallel3.json)|
 
 ## Links to External SST Components: <a name="ExternSSTComp"></a>
-* [HBM DRAMSIm2](https://github.com/tactcomplabs/HBM/releases/tag/sst-8.0.0-release)
-* [DRAMSim2](https://github.com/dramninjasUMD/DRAMSim2/archive/v2.2.2.tar.gz)
-* [DRAMSim3](https://github.com/umd-memsys/dramsim3)
-* [NVDIMMSim](https://github.com/jimstevens2001/NVDIMMSIM/archive/v2.0.0.tar.gz)
-* [RISC-V Rev](https://github.com/tactcomplabs/rev)
+* [SST Main Documentation](http://sst-simulator.org/SSTPages/SSTMainDocumentation/): Click on External Components Instructions
+* [Community Elements](http://sst-simulator.org/SSTPages/SSTMainCommunity/)

@@ -26,15 +26,15 @@
   for simulation. components, representing hardware systems such as processors, 
   network switches, or memory devices, interface with the simulation core to 
   communicate and operate with a common notion of timeframe. The simulation 
-  core also provides support services such as power and area estimation, 
-  checkpointing, configuration/initialization of the simulation, and statistics 
+  core also provides support services such as configuration/initialization 
+  of the simulation, and statistics 
   gathering. The SST’s modular interface eases the integration of existing 
   simulators into a common framework and is licensed under a BSD-like license. 
   In addition, the components of the SST model are compatible with external 
   models such as Gem5 and DRAMSim2. Because of the open source core, the 
   modular framework is easily extensible with new models. 
 
-  The SST uses a (DES) model layered on top of MPI.  The simulations are 
+  The SST uses a PDES model layered on top of MPI and threading.  The simulations are 
   comprised of components or building blocks of the simulation model are 
   connected by links. These components interact by sending events over 
   links—with each link having a minimum latency. In addition, components can 
@@ -60,7 +60,7 @@ SST from source.  This includes the following:
 * C/C++ Compiler (GCC,Clang)
 * GNU Autotools
 * OpenMPI (4.0.5 is preferred)
-* Python 3.X+
+* Python 3.7+
 * Git (if cloning the source tree)
 
 ### SST-Core Installation
@@ -107,7 +107,6 @@ of these additional options are listed as follows:
 | `--disable-mpi`             | Disables MPI (only support for single node |
 | `--disable-mem-pools`       | Disables memory pools |
 | `--enable-debug`            | Enables debug mode  |
-| `--enable-event-tracking`   | Enables event tracking for debug mode  |
 | `--enable-profile`          | Enables performance profiling of core features  |
 
 For more information regarding these options and other options, do the following:
@@ -119,7 +118,7 @@ $> ./configure --help
 
 Now that the SST-Core has been installed, we can build the SST-Elements package.  
 The SST-Elements package provides individual *components* that simulate specific 
-pieces of hardware.  The SST-Elements package provides a number of sample
+pieces of hardware.  The SST-Elements package provides several sample
 hardware elements such as memories, caches, processor cores and network interfaces.  
 It also provides a number of examples on how to construct larger simulations of 
 full systems.  The SST-Elements provides a number of components that are built 
@@ -168,7 +167,7 @@ with both the base SST-Core and the SST-Elements packages installed.
 There are a number of basic commands that are commonly utilized when 
 running and/or debugging an SST simulation.  We summarize the most 
 commonly used command sets here and the situations where they are 
-appropriately utilized.  However, all of the major SST command line tools 
+appropriately utilized.  However, each of the major SST command line tools 
 provide a `--help` option to print useful command line options 
 and their associated parameters.  
 
@@ -181,6 +180,7 @@ simulation graph using Python or JSON can be performed as follows:
 ```
 $> sst /path/to/simulation.py
 $> sst /path/to/simulation.json
+$> sst --model-options="args to python script" /path/to/simulation.py
 ```
 
 * _Executing with Verbosity_: Similar to the command above, users may enable 
@@ -235,13 +235,13 @@ $> dot -Tpdf foo_large.dot > foo_large.pdf
 provided by SST is the ability to develop simulation inputs using Python 
 or JSON syntax.  Python is often useful when developing large simulations 
 that require redundant components generated (multiple CPUs with 
-memory hierarchys).  However, JSON inputs are often 
+memory hierarchies).  However, JSON inputs are often 
 easier to discern the respective graph 
-connectivity given the inherent syntax of JSON.  SST provides an internal 
+connectivity given the inherent hierarchical syntax of JSON.  SST provides an internal 
 feature that permits users to specify in a graph in one format and convert 
 it to another format (with or without executing the simulation).  Further, 
 users may also specify large, complex graph inputs and direct SST to 
-output the same graph in a more expanded form.  This can also be useful 
+output the same graph in an expanded form.  This can also be useful 
 for debugging complex simulations as the graph output will be the raw 
 form of what SST utilized for the actual graph connectivity.  Various 
 forms of inputting and outputting graphs are shown below (all without 
@@ -265,7 +265,7 @@ the configured components.  We details these as follows:
 
 * _Querying All Components_: The first method is to simply query all known 
 configured components.  By simply executing the `sst-info` command, 
-the SST-Core will output all the configuration parameters, statitics and nested 
+the SST-Core will output all the configuration parameters, statistics and nested 
 subcomponents for all the known components.  This includes any component built 
 within the installed SST package as well as any user-registered components.
 ```
@@ -382,14 +382,16 @@ a basic overview of utilizing Python to create a sample simulation
 input file.  Additional, advanced Python scripting topics will be discussed 
 in the Level 2 Tutorial.
 
-Each Python-based simulation input script has requires at least three 
+Each Python-based simulation input script requires at least two
 key sections as outlined below:
 * **Python imports**: Each simulation input file must import the `sst` Python
 library.  This provides the fundamental component configuration options 
 and functions that link directly to the SST-Core and any configured elements.
 * **SST Core Options**: The core options section describes the top-level configuration 
 options for the SST-Core.  This includes items such as the SST program options 
-that set the baseline clock candence and simulation runtime.
+that set the baseline clock cadence and simulation runtime.  This section is included 
+here, but it is optional for users to specify in simulation scripts.  The SST Core
+has default values for all the required Core Options.
 * **SST Component Configuration**: The SST component configuration section contains 
 the bulk of the information in a Python simulation script.  This includes the 
 definition, parameters and any required subcomponents for each target component 
@@ -405,15 +407,11 @@ within the simulation script.  In this manner, simulation scripts are **not**
 limited to SST functionality.  All normal Python syntatic operations may 
 be utilized as with a traditional Python script.  
 
-The next section includes the SST Core Options.  These options drive the 
+The next section includes the SST Core Options, which are optional.  These options drive the 
 top-level simulation configuration that are utilized across components.  Each 
 of the core program options are set with the Python function 
-`sst.setProgramOptions("Option", "Value)`.  The two most commonly 
-used program options are the `timebase` and `stop-at` options.  The 
-`timebase` option sets the baseline global clock cadence by which 
-SST will govern the core simulation components.  Each component has the ability 
-to set higher or lower fidelity clocks governing local event timing, but the 
-global clock drives the top-level simulation cadence.  Further, the `stop-at` 
+`sst.setProgramOptions("Option", "Value)`.  The most commonly 
+used program option is the `stop-at` option.  The `stop-at` 
 program option determines when the simulation will complete reletive 
 to the core timebase clock frequency.  In our example below we set a 
 `timebase` of 1 picosecond and inform SST to stop the simulation at 10000 
@@ -425,13 +423,13 @@ SST automatically interprets the labeled units.  In this manner, users
 may utilize traditional labels such as `ns`, `us`, `ms` and `s` to specify 
 timing values in nanoseconds, microseconds, milliseconds and seconds, 
 respectively.  This is also true for specifying traditional measures 
-of capacity (`GB`,`KB`, etc).  
+of capacity (`GB`,`kB`, `MiB`, etc).  
 
 The full list of permissible global program options are listed as follows:
 
 |  **Option**  | **Description** | **Values** |
 |:-|:-|:-|
-| `timebase`          | The baseline clock cadence | Time (`ps`,`ns`,etc) |
+| `timebase`          | The baseline clock cadence | Time (`ps`,`ns`,etc); Default=1ps |
 | `stop-at`           | Simulation termination point | Simulated time (`ms`, `s`, etc) |
 | `debug-file`        | Specifies the file for debug outptu | Filename |
 | `partitioner`       | Select the graph partitioner to use | `lib.partitionerName` |
@@ -511,11 +509,13 @@ the two target component parameters alongside their default values (in brackets)
 
 ### Example Python Simulation Script
 ```
-# Automatically generated SST Python input
 import sst
 
 # Define SST core options
+#-- set the `timebase`.  This is optional as 1ps is the default
 sst.setProgramOption("timebase", "1 ps")
+
+#-- set the `stop-at` option
 sst.setProgramOption("stop-at", "10000s")
 
 # Define the simulation components
@@ -525,7 +525,6 @@ comp_clocker0.addParams({
       "clock" : "1MHz"
 })
 
-# End of generated output.
 ```
 *Note that this simulation script can be found in the SST-Core source tree at:
 ~/tests/test_ClockerComponent.py*
@@ -538,7 +537,7 @@ The output data created from SST is generated from the SST *statistics*.  These
 statistics values are generated for each instantiated component object and output 
 to a chosen destination at the end of a simulation (console, file, etc).  The 
 statistics output data can be utilized to analyze the simulation results.  Each 
-component has the ability to define and output a unique set of statistics values 
+component can define and output a unique set of statistics values 
 based upon the functionality implemented in the target component.  For example, 
 network components may output statistics such as the number of bytes transfered 
 or the average size of a network packet.  Conversely, cpu components may track 
@@ -550,7 +549,9 @@ The process of enabling and utilizing statistics in an SST simulation script req
 two steps as follows:
 * **Statistic Load Level** : Setting the statistic load level involves enabling 
 the statistics functions inside the SST core to collect and disseminate data 
-to the target output medium.
+to the target output medium.  This value is only used when statistics are enabled 
+using functions that enable all statistics for a component instances, component 
+type, or globally.
 * **Statistic Output** : Setting the statistic output information initializes 
 the target data output medium after the simulation has completed.  
 
@@ -560,8 +561,7 @@ statistics to be enabled for data collection within the target element objects.
 Generally speaking, the higher the level, the more data will be generated.  Setting 
 the level to "0" will disable the statistics (which is also the default action).  Setting 
 the statistic load level is a simple processs of adding a single sst function call 
-to the Python input script as follows.  This is generally added before creating 
-any element objects.
+to the Python input script as follows.
 
 ```
 sst.setStatisticLoadLevel(7)
@@ -576,12 +576,12 @@ for downstream analysis.  The commonly utilized output file format is *csv*, or
 comma separated value files.  The SST python interfaces provide a set of functions
 to enable the CSV (or other output formats) and set the required parameters.  Each 
 output enabler function is formatted as `sst.statOutputFORMAT` where `FORMAT` 
-is one of `CONSOLE`, `TXT`, `CSV`, `TXTgz` and `CXVgz`.  Each of these functions 
+is one of `CONSOLE`, `TXT`, `CSV`, `TXTgz` and `CSVgz`.  Each of these functions 
 can take one or more parameters that define things such as the file path, 
 the output header information and the target MPI rank for which to output 
 the data from.  In our example below, we set the output to utilize *csv* 
 files, the file path to `TestOutput.csv` and the CSV separator character to 
-a comma.  As with the componenet parameters, statistics parameters can be 
+a comma.  As with the component parameters, statistics parameters can be 
 specified using standard Python syntax.  The full list of potential options 
 by output type is listed as follows:
 
@@ -629,7 +629,7 @@ parameters that are enabled across all components.  These include the following:
 
 |  **Parameter**  | **Description** | **Default Value** |
 |:-|:-|:-|
-| `rate`   | Identifies the output rate of the component | 0 |
+| `rate`   | Identifies the output rate of the component | 0 (output once at end of simulation) |
 | `type`   | Identifies the type of the statistic | `sst.AccumulatorStatistic` |
 | `startat`| Identifies a time in the simulation when to enable the statistic. | `0ns` (enabled at startup) |
 | `stopat` | Identifies a time in the simulation when to disable the statistic.| `0ns` (not disabled until sim completion) |
@@ -639,7 +639,9 @@ collection type stores and reports data in a unique manner.  The most
 commonly used type is the `sst.AccumulatorStatistic` type that accumulates 
 data into a single value.  The `sst.HistogramStatistic` creates a histogram of 
 the collected data.  The `sst.UniqueCountStatistic` counts unique entries 
-from the collected data and the `sst.NullStatistic` effectively does nothing.  Additional 
+from the collected data and the `sst.NullStatistic` effectively does nothing 
+and is used for statistics that have not been enabled (i.e., a user 
+would not specify this type of statistic explicitly).  Additional 
 parameters for each of the statistics types is provided as follows:
 
 |  **Type**  | **Parameter** | **Description** |
@@ -724,10 +726,10 @@ StatExample0.setRank(0)
 
 # Set Component Parameters
 StatExample0.addParams({
-      "rng" : """marsaglia""",
-      "count" : """100""",   # Change For number of 1ns clocks
-      "seed_w" : """1447""",
-      "seed_z" : """1053"""
+      "rng" : "marsaglia",
+      "count" : "100",   # Change For number of 1ns clocks
+      "seed_w" : "1447",
+      "seed_z" : "1053"
 })
 
 # Enable Individual Statistics for the Component with separate rates
