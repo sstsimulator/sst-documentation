@@ -20,11 +20,10 @@
 * Documentation Links (additional info links)
 
 ### [Level 2 Tutorial](Level2Tutorial.md)
-* Parallel SST runs
+* Parallel SST Runs
 * Advanced python scripting
-* Advanced runtime functions
-* More runtime examples (from SST Core and SST-Elements)
-* Loading parallel graphs
+* Advanced JSON Scripting
+* Loading Parallel Graphs
 * Links to external SST components
 
 ### [Level 3 Tutorial](Level3Tutorial.md)
