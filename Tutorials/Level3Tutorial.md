@@ -33,9 +33,6 @@ in mind when implementing external components.
 
 * C++ Standards: The SST Core utilizes C++11 data structures and methods.  External 
 elements should follow the C++11 standard as well.
-* All external elements should implement and register a method that serves as a 
-clock advancement method (clock tick).  This function will be registered and 
-call with the SST Core in order to advance the internal clock
 * All warning, debug and user messages should utilize the SST messaging 
 infrastructure.  This ensures that messages are correctly delivered to the 
 console when executing parallel simulations with threading and/or MPI.
@@ -48,6 +45,11 @@ atomicity of message state.
 * The SST Core applications (`sst`, `sst-config`, `sst-register`, etc) must be 
 in the user's current PATH environment variable in order to correctly build 
 and install the external component.
+* External elements can optionally implement and register a method that serves as a 
+clock advancement method (clock tick).  This function will be registered and 
+call with the SST Core in order to advance the internal clock.  We will utilize 
+this method throughout this tutorial.  However, components may also implement 
+purely event-driven handlers.
 
 ### Directory Structure
 
@@ -212,7 +214,6 @@ to the console during the component simulation.
 #ifndef _BASIC_COMPONENT_H_
 #define _BASIC_COMPONENT_H_
 
-#include <sst/core/sst_config.h>
 #include <sst/core/component.h>
 
 namespace SST {
@@ -328,7 +329,6 @@ can be found [here](http://sst-simulator.org/SSTPages/SSTDeveloperNewELIMigratio
 #ifndef _BASIC_COMPONENT_H_
 #define _BASIC_COMPONENT_H_
 
-#include <sst/core/sst_config.h>
 #include <sst/core/component.h>
 
 namespace SST {
@@ -487,6 +487,7 @@ SST Core that our component has reached a completion point by calling
 // _basicComponent_cc_
 //
 
+#include <sst/core/sst_config.h>
 #include "basicComponent.h"
 
 using namespace SST;
@@ -700,7 +701,6 @@ at level 2 and the *HundredCycleCounter* at level 3.
 #ifndef _BASIC_COMPONENT_H_
 #define _BASIC_COMPONENT_H_
 
-#include <sst/core/sst_config.h>
 #include <sst/core/component.h>
 
 namespace SST {
@@ -797,6 +797,7 @@ depending upon what the target statistic is tracking.
 // _basicComponent_cc_
 //
 
+#include <sst/core/sst_config.h>
 #include "basicComponent.h"
 
 using namespace SST;
@@ -1029,7 +1030,6 @@ component access to the subcomponent features.
 #ifndef _BASIC_COMPONENT_H_
 #define _BASIC_COMPONENT_H_
 
-#include <sst/core/sst_config.h>
 #include <sst/core/component.h>
 #include <sst/core/subcomponent.h>
 #include <sst/core/rng/marsaglia.h>
@@ -1261,6 +1261,7 @@ will be called for every clock cycle in the top-level component.
 // _basicComponent_cc_
 //
 
+#include <sst/core/sst_config.h>
 #include "basicComponent.h"
 
 using namespace SST;
@@ -1639,7 +1640,6 @@ class infrastructure.
 #ifndef _BASIC_COMPONENT_H_
 #define _BASIC_COMPONENT_H_
 
-#include <sst/core/sst_config.h>
 #include <sst/core/component.h>
 #include <sst/core/subcomponent.h>
 #include <sst/core/event.h>
@@ -1883,6 +1883,7 @@ method.
 // _basicComponent_cc_
 //
 
+#include <sst/core/sst_config.h>
 #include "basicComponent.h"
 
 using namespace SST;
